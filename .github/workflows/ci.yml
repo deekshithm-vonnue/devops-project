@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
 
-permisssions:
+permissions:
   contents: read
   packages: write
 
