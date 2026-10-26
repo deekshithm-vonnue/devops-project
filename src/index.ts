@@ -6,7 +6,7 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
-  res.status(200).send("Hello from my DevOps project! Version 2 is deployed.");
+  res.status(200).send("Hello from my DevOps project! Version 3 is deployed.");
 });
 
 app.get("/health", (req: Request, res: Response) => {
