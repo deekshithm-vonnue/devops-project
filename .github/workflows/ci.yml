@@ -78,4 +78,3 @@ jobs:
           docker --version
           docker compose version
           docker info --format '{{.ServerVersion}}'
-```
