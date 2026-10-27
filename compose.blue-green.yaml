@@ -1,0 +1,58 @@
+services:
+  blue:
+    image: ghcr.io/deekshithm-vonnue/devops-project:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
+    pull_policy: always
+    environment:
+      PORT: "3000"
+      APP_ENV: production
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:3000/health
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  green:
+    image: ghcr.io/deekshithm-vonnue/devops-project:${IMAGE_TAG:?Set IMAGE_TAG to a commit SHA}
+    pull_policy: always
+    environment:
+      PORT: "3000"
+      APP_ENV: production
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:3000/health
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/upstream:/etc/nginx/upstream:ro
+    depends_on:
+      blue:
+        condition: service_healthy
+      green:
+        condition: service_healthy
+    restart: unless-stopped

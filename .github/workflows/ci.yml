@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   build:
+    name: Build TypeScript
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +31,7 @@ jobs:
         run: npm run build
 
   docker-build:
+    name: Build and publish Docker image
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -78,3 +80,37 @@ jobs:
           docker --version
           docker compose version
           docker info --format '{{.ServerVersion}}'
+
+  deploy:
+    name: Deploy Blue-Green
+    needs: [build, docker-build, runner-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+
+    # Do not run overlapping deployments.
+    concurrency:
+      group: blue-green-production
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy new image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          DEPLOY_DIR: /home/deekshith.m/devops-project
+          COMPOSE_FILE: ${{ github.workspace }}/compose.blue-green.yaml
+        run: |
+          bash "$GITHUB_WORKSPACE/deploy-blue-green.sh"
