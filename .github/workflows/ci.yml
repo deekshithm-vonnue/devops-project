@@ -67,7 +67,7 @@ jobs:
     name: Test self-hosted runner
     needs: [build, docker-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, linux, x64, local-deploy]
+    runs-on: self-hosted
 
     steps:
       - name: Verify runner environment
