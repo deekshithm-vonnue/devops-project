@@ -62,3 +62,20 @@ jobs:
             ghcr.io/deekshithm-vonnue/devops-project:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  runner-test:
+    name: Test self-hosted runner
+    needs: [build, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, local-deploy]
+
+    steps:
+      - name: Verify runner environment
+        run: |
+          echo "Running on the local self-hosted runner"
+          hostname
+          uname -a
+          docker --version
+          docker compose version
+          docker info --format '{{.ServerVersion}}'
+```
