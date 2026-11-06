@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 # Deployment settings
-PROJECT="devops-bg"
+PROJECT="devops-project"
 DEPLOY_DIR="${DEPLOY_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)}"
 COMPOSE_FILE="${COMPOSE_FILE:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/compose.blue-green.yaml}"
 UPSTREAM_FILE="$DEPLOY_DIR/nginx/upstream/active-upstream.conf"
