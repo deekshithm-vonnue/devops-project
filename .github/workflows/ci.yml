@@ -114,6 +114,7 @@ jobs:
           COMPOSE_FILE: ${{ github.workspace }}/compose.blue-green.yaml
         run: |
           bash "$GITHUB_WORKSPACE/deploy-blue-green.sh"
+  
   deploy-ec2:
     name: Deploy to AWS EC2
     needs: [build, docker-build]
@@ -136,13 +137,27 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          test -n "$EC2_HOST"
-          test -f "$EC2_SSH_KEY"
+          echo "Checking EC2_HOST..."
+          test -n "$EC2_HOST" || {
+            echo "ERROR: EC2_HOST is empty"
+            exit 1
+          }
 
-          ssh \
+          echo "Checking SSH private key..."
+          test -f "$EC2_SSH_KEY" || {
+            echo "ERROR: SSH key not found: $EC2_SSH_KEY"
+            exit 1
+          }
+
+          echo "Checking SSH key permissions..."
+          chmod 600 "$EC2_SSH_KEY"
+
+          echo "Connecting to EC2: $EC2_HOST"
+
+          ssh -vv \
             -i "$EC2_SSH_KEY" \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
             "$EC2_USER@$EC2_HOST" \
             "cd /home/ec2-user/devops-project && IMAGE_TAG='$IMAGE_TAG' bash ./deploy-blue-green.sh"
-
