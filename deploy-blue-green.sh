@@ -135,21 +135,31 @@ rollback() {
   echo "ERROR: Deployment verification failed."
   echo "Rolling back traffic to $PREVIOUS..."
 
+  # Restore the previous Nginx upstream configuration.
   if ! cp "$BACKUP_FILE" "$UPSTREAM_FILE"; then
     echo "CRITICAL: Could not restore the upstream configuration."
     return 1
   fi
 
-  if ! compose exec -T nginx nginx -t; then
+  # Validate the restored configuration, even if Nginx is stopped.
+  if ! compose run --rm --no-deps nginx nginx -t; then
     echo "CRITICAL: Restored Nginx configuration is invalid."
     return 1
   fi
 
+  # Ensure Nginx is running.
+  if ! compose up -d --no-deps nginx; then
+    echo "CRITICAL: Could not start Nginx during rollback."
+    return 1
+  fi
+
+  # Reload the restored configuration.
   if ! compose exec -T nginx nginx -s reload; then
     echo "CRITICAL: Could not reload Nginx during rollback."
     return 1
   fi
 
+  # Verify that traffic is restored.
   for attempt in $(seq 1 10); do
     if curl -fsS "$HEALTH_URL" >/dev/null; then
       echo "Rollback verified. Traffic is routed to $PREVIOUS."
@@ -159,7 +169,7 @@ rollback() {
     sleep 2
   done
 
-  echo "CRITICAL: Rollback route was restored, but health verification failed."
+  echo "CRITICAL: Rollback health verification failed."
   return 1
 }
 
