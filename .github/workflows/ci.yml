@@ -114,3 +114,35 @@ jobs:
           COMPOSE_FILE: ${{ github.workspace }}/compose.blue-green.yaml
         run: |
           bash "$GITHUB_WORKSPACE/deploy-blue-green.sh"
+  deploy-ec2:
+    name: Deploy to AWS EC2
+    needs: [build, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+
+    concurrency:
+      group: ec2-blue-green-production
+      cancel-in-progress: false
+
+    env:
+      EC2_HOST: ${{ vars.EC2_HOST }}
+      EC2_USER: ec2-user
+      EC2_SSH_KEY: /home/deekshith/.ssh/trail.pem
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Deploy to EC2 through SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          test -n "$EC2_HOST"
+          test -f "$EC2_SSH_KEY"
+
+          ssh \
+            -i "$EC2_SSH_KEY" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$EC2_USER@$EC2_HOST" \
+            "cd /home/ec2-user/devops-project && IMAGE_TAG='$IMAGE_TAG' bash ./deploy-blue-green.sh"
+
